@@ -1,0 +1,21 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Id": "org.murasaki.resourcepanel",
+        "Name": "Resource Panel",
+        "Name[zh_CN]": "资源面板",
+        "Description": "CPU, RAM and GPU utilisation as paired rings with a history chart",
+        "Description[zh_CN]": "用成对圆环显示 CPU/RAM 与 GPU/VRAM 占用，并画出历史曲线",
+        "Icon": "utilities-system-monitor",
+        "Authors": [
+            {
+                "Name": "murasaki"
+            }
+        ],
+        "Version": "1.0.0",
+        "Category": "System Information",
+        "License": "GPL-3.0-or-later",
+        "EnabledByDefault": true
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

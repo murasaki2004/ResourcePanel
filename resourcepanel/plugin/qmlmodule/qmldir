@@ -1,0 +1,3 @@
+module org.murasaki.resourcepanel
+plugin resourcepanel
+classname ResourcePanelPlugin

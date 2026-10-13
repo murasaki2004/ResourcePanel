@@ -1,0 +1,28 @@
+# 未纳入仓库的本地目录（探索性代码与设计稿工作区）
+/spike/
+/preview/
+
+# 日志
+*.log
+
+# 构建产物（CMake / Ninja / Qt）
+build/
+build-test/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+*.o
+*.so
+moc_*.cpp
+
+# Qt Creator / clangd
+.qtc_clangd/
+compile_commands.json
+.cache/
+
+# 编辑器与系统文件
+.vscode/
+.idea/
+*.swp
+.DS_Store

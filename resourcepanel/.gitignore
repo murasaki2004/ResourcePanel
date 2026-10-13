@@ -1,0 +1,21 @@
+# Build output
+plugin/build/
+plugin/build-test/
+plugin/stage/
+
+# Local kpackagetool test mount (symlink into package/)
+_pkgtest/
+
+# Generated test fixtures (see test/make_mirror.py)
+test/ui/
+
+# Harness binaries and their output
+test/validate_main
+test/variation_main
+test/*.log
+test/*.png
+
+# Everything else under test/ is a local-only development harness; keep only
+# the rendered states.png that README embeds
+test/*
+!test/states.png

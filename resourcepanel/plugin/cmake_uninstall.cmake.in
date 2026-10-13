@@ -1,0 +1,37 @@
+# Removes exactly the files recorded by `make install`.
+# Written for resources/panel/*.cmake so `make uninstall` is always the precise
+# inverse of `make install`, and never touches anything it did not create.
+
+set(_manifest "@CMAKE_CURRENT_BINARY_DIR@/install_manifest.txt")
+
+if(NOT EXISTS "${_manifest}")
+    message(FATAL_ERROR
+        "install_manifest.txt not found at ${_manifest}.\n"
+        "Run `make install` (or `cmake --install`) before `make uninstall`.")
+endif()
+
+file(STRINGS "${_manifest}" _files)
+
+set(_removed 0)
+foreach(_file IN LISTS _files)
+    if(EXISTS "${_file}" OR IS_SYMLINK "${_file}")
+        file(REMOVE "${_file}")
+        message(STATUS "removed ${_file}")
+        math(EXPR _removed "${_removed} + 1")
+    endif()
+endforeach()
+
+# Prune the module directory if it is now empty, then its parent only if the
+# parent itself became empty. Never remove a directory that still has content.
+set(_module_dir "@RESOURCEPANEL_QML_DIR@/@RESOURCEPANEL_MODULE_SUBDIR@")
+if(IS_DIRECTORY "${_module_dir}")
+    file(GLOB _leftover "${_module_dir}/*")
+    if(_leftover STREQUAL "")
+        file(REMOVE_RECURSE "${_module_dir}")
+        message(STATUS "removed empty directory ${_module_dir}")
+    else()
+        message(STATUS "kept ${_module_dir} (still contains ${_leftover})")
+    endif()
+endif()
+
+message(STATUS "uninstall complete: ${_removed} file(s) removed")
