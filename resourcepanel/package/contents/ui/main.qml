@@ -150,8 +150,13 @@ PlasmoidItem {
 
         implicitWidth: canvasWidth
         implicitHeight: canvasHeight
-        Layout.minimumWidth: canvasWidth * 0.6
-        Layout.minimumHeight: canvasHeight * 0.6
+        /*
+         * Floor at the size the widget is actually used at on the desktop,
+         * read from the saved Plasma geometry (Applet-506, 384x176 on the
+         * 1463x914 logical screen). It cannot be shrunk below that.
+         */
+        Layout.minimumWidth: 384
+        Layout.minimumHeight: 176
 
         Rectangle {
             id: card
