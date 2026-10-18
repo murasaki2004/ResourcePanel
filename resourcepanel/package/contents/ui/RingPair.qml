@@ -30,6 +30,10 @@ Item {
     property color outerColor: "transparent"
     property color innerColor: "transparent"
 
+    /// Alpha of the unfilled track tint. The light surface needs a touch more
+    /// than the dark one for the track to read against white.
+    property real trackOpacity: 0.15
+
     /// Shown in the middle of the rings. Names only — never a number.
     property string outerLabel: ""
     property string innerLabel: ""
@@ -105,7 +109,7 @@ Item {
         preferredRendererType: Shape.CurveRenderer
 
         ShapePath {
-            strokeColor: Qt.rgba(root.outerColor.r, root.outerColor.g, root.outerColor.b, 0.15)
+            strokeColor: Qt.rgba(root.outerColor.r, root.outerColor.g, root.outerColor.b, root.trackOpacity)
             strokeWidth: root.outerStroke
             fillColor: "transparent"
             capStyle: ShapePath.RoundCap
@@ -125,7 +129,7 @@ Item {
         preferredRendererType: Shape.CurveRenderer
 
         ShapePath {
-            strokeColor: Qt.rgba(root.innerColor.r, root.innerColor.g, root.innerColor.b, 0.15)
+            strokeColor: Qt.rgba(root.innerColor.r, root.innerColor.g, root.innerColor.b, root.trackOpacity)
             strokeWidth: root.outerStroke
             fillColor: "transparent"
             capStyle: ShapePath.RoundCap

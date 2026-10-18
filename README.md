@@ -34,8 +34,12 @@ kquitapp6 plasmashell && kstart plasmashell
 要在不重启面板的情况下预览 UI 改动：
 
 ```sh
-make preview      # 把四种状态离屏渲染到 test/states.png
+make preview        # 把四种状态离屏渲染到 test/states.png
+make preview-light  # 同样的四种状态，走浅色配色
 ```
+
+外观跟随系统配色方案：浅色主题下卡片为白色、文字转深，深色主题下保持原来的近黑卡片；
+四个指标的色相不变，浅色下加深以保证圆环标签的可读性。无需手动设置。
 
 ## 配置
 

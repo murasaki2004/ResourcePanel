@@ -4,6 +4,7 @@
 #   make install    install plugin + applet (asks for sudo if needed)
 #   make uninstall  remove both, using the install manifest
 #   make preview    render the UI offscreen to test/states.png
+#   make preview-light  render the same states through the light palette
 #   make clean      drop build output
 
 SHELL      := /bin/bash
@@ -15,7 +16,7 @@ BUILD_DIR  := $(PLUGIN_DIR)/build
 QMAKE6 ?= qmake6
 QML_DIR ?= $(shell $(QMAKE6) -query QT_INSTALL_QML 2>/dev/null)
 
-.PHONY: all build install uninstall preview validate clean distclean
+.PHONY: all build install uninstall preview preview-light validate clean distclean
 
 all: build
 
@@ -61,16 +62,32 @@ preview: stage
 	    QT_QPA_PLATFORM=offscreen ./variation_main \
 	        "$(PLUGIN_DIR)/stage" "$(TEST_DIR)/variation_probe.qml" \
 	        "$(TEST_DIR)/ui/TestStage.qml" \
-	        "$(TEST_DIR)/st$$g.png" $$g >/dev/null 2>&1 || exit 1; \
+	        "$(TEST_DIR)/st$$g.png" $$g dark >/dev/null 2>&1 || exit 1; \
 	done
 	@cd $(TEST_DIR) && magick montage st0.png st1.png st2.png st3.png \
 	    -tile 2x2 -geometry +14+14 -background '#101215' states.png
 	@echo "wrote $(TEST_DIR)/states.png"
 
+# The same four states through the light palette, so the light theme can be
+# reviewed without switching the desktop colour scheme.
+preview-light: stage
+	@cd $(TEST_DIR) && python3 make_mirror.py
+	cd $(TEST_DIR) && g++ -fPIC -std=c++20 variation_main.cpp -o variation_main \
+	    $$(pkg-config --cflags --libs Qt6Core Qt6Qml Qt6Gui Qt6Quick)
+	@cd $(TEST_DIR) && for g in 0 1 2 3; do \
+	    QT_QPA_PLATFORM=offscreen ./variation_main \
+	        "$(PLUGIN_DIR)/stage" "$(TEST_DIR)/variation_probe.qml" \
+	        "$(TEST_DIR)/ui/TestStage.qml" \
+	        "$(TEST_DIR)/stl$$g.png" $$g light >/dev/null 2>&1 || exit 1; \
+	done
+	@cd $(TEST_DIR) && magick montage stl0.png stl1.png stl2.png stl3.png \
+	    -tile 2x2 -geometry +14+14 -background '#eef1f6' states-light.png
+	@echo "wrote $(TEST_DIR)/states-light.png"
+
 clean:
 	rm -rf $(BUILD_DIR) $(PLUGIN_DIR)/stage $(TEST_DIR)/ui
 	rm -f $(TEST_DIR)/variation_main $(TEST_DIR)/validate_main
-	rm -f $(TEST_DIR)/st*.png $(TEST_DIR)/states.png $(TEST_DIR)/applet.png
+	rm -f $(TEST_DIR)/st*.png $(TEST_DIR)/states.png $(TEST_DIR)/states-light.png $(TEST_DIR)/applet.png
 	rm -f $(TEST_DIR)/*.log
 
 distclean: clean

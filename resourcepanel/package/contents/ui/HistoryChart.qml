@@ -25,6 +25,14 @@ Item {
     property string rangeLabel: ""
 
     /*
+     * Coordinate-frame colours, supplied by the caller so the grid, axis and
+     * captions can follow the light/dark surface. Defaults match the dark card.
+     */
+    property color gridColor: Qt.rgba(1, 1, 1, 0.055)
+    property color axisColor: Qt.rgba(1, 1, 1, 0.13)
+    property color labelColor: Qt.rgba(1, 1, 1, 0.28)
+
+    /*
      * Effective on-screen scale of this chart, supplied by the caller while the
      * whole layout is scaled to the widget. The plots rasterise at the size
      * they end up being drawn at rather than being upscaled afterwards, which
@@ -71,6 +79,8 @@ Item {
 
     onColorAChanged: curves.requestPaint()
     onColorBChanged: curves.requestPaint()
+    onGridColorChanged: grid.requestPaint()
+    onAxisColorChanged: grid.requestPaint()
     onWidthChanged: { grid.requestPaint(); curves.requestPaint(); }
     onHeightChanged: { grid.requestPaint(); curves.requestPaint(); }
     onRenderScaleChanged: { grid.requestPaint(); curves.requestPaint(); }
@@ -143,7 +153,7 @@ Item {
             for (const frac of [0, 0.5, 1]) {
                 const y = Math.round(root.padTop + root.plotHeight * (1 - frac)) + 0.5;
                 // The zero line doubles as the X axis, so give it more weight.
-                ctx.strokeStyle = frac === 0 ? Qt.rgba(1, 1, 1, 0.13) : Qt.rgba(1, 1, 1, 0.055);
+                ctx.strokeStyle = frac === 0 ? root.axisColor : root.gridColor;
                 ctx.beginPath();
                 ctx.moveTo(root.padLeft, y);
                 ctx.lineTo(root.width - root.padRight, y);
@@ -152,13 +162,13 @@ Item {
 
             const x0 = root.padLeft + 0.5;
             const y1 = root.padTop + root.plotHeight;
-            ctx.strokeStyle = Qt.rgba(1, 1, 1, 0.13);
+            ctx.strokeStyle = root.axisColor;
             ctx.beginPath();
             ctx.moveTo(x0, root.padTop);
             ctx.lineTo(x0, y1 + 0.5);
             ctx.stroke();
 
-            ctx.fillStyle = Qt.rgba(1, 1, 1, 0.28);
+            ctx.fillStyle = root.labelColor;
             ctx.font = "600 6px sans-serif";
             ctx.textBaseline = "top";
             ctx.textAlign = "left";
@@ -178,7 +188,7 @@ Item {
             width: root.padLeft - 4
             horizontalAlignment: Text.AlignRight
             text: Math.round(root.yMax * modelData)
-            color: Qt.rgba(1, 1, 1, 0.28)
+            color: root.labelColor
             font.pixelSize: 7
             font.bold: true
         }

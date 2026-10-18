@@ -35,11 +35,92 @@ PlasmoidItem {
     /// Metric ids in display order, kept as one stable value for the value row.
     readonly property var metricOrder: ["cpu", "ram", "gpu", "vram"]
 
-    readonly property var metricColors: ({
+    /*
+     * Light or dark follows the running colour scheme rather than a setting, so
+     * the card matches the desktop the way every other Plasma surface does. The
+     * discriminator is the luminance of the theme background: a light scheme
+     * has a bright background, a dark one a near-black one.
+     */
+    readonly property bool darkMode: {
+        const bg = Kirigami.Theme.backgroundColor;
+        return (0.2126 * bg.r + 0.7152 * bg.g + 0.0722 * bg.b) < 0.5;
+    }
+
+    /*
+     * Non-accent surface colours, one curated set per scheme. The dark set is
+     * the original palette; the light set inverts the surface and deepens the
+     * greys so text stays legible on white. Both are kept together here so the
+     * palette lives in a single place.
+     */
+    readonly property var surface: darkMode ? darkSurface : lightSurface
+
+    readonly property var darkSurface: ({
+        card: "#1c1f25",
+        cardBorder: Qt.rgba(1, 1, 1, 0.075),
+        separator: Qt.rgba(1, 1, 1, 0.35),
+        temperature: Qt.rgba(1, 1, 1, 0.55),
+        badgeOnFill: Qt.rgba(61 / 255, 220 / 255, 151 / 255, 0.12),
+        badgeOnEdge: Qt.rgba(61 / 255, 220 / 255, 151 / 255, 0.22),
+        badgeOnText: "#8fd9b4",
+        badgeOffFill: Qt.rgba(159 / 255, 176 / 255, 196 / 255, 0.10),
+        badgeOffEdge: Qt.rgba(159 / 255, 176 / 255, 196 / 255, 0.20),
+        badgeOffText: "#9fb0c4",
+        valueActive: "#e6eaf0",
+        valueIdle: "#7d8492",
+        unit: "#69707d",
+        tierFill: Qt.rgba(1, 1, 1, 0.035),
+        tierHoverFill: Qt.rgba(1, 1, 1, 0.07),
+        tierActiveFill: Qt.rgba(1, 1, 1, 0.10),
+        tierActiveEdge: Qt.rgba(1, 1, 1, 0.13),
+        tierActiveText: "#f2f4f7",
+        tierText: "#767d8b",
+        grid: Qt.rgba(1, 1, 1, 0.055),
+        axis: Qt.rgba(1, 1, 1, 0.13),
+        chartLabel: Qt.rgba(1, 1, 1, 0.28),
+        trackOpacity: 0.15
+    })
+
+    readonly property var lightSurface: ({
+        card: "#ffffff",
+        cardBorder: Qt.rgba(15 / 255, 23 / 255, 42 / 255, 0.10),
+        separator: Qt.rgba(15 / 255, 23 / 255, 42 / 255, 0.32),
+        temperature: Qt.rgba(15 / 255, 23 / 255, 42 / 255, 0.55),
+        badgeOnFill: Qt.rgba(17 / 255, 154 / 255, 99 / 255, 0.12),
+        badgeOnEdge: Qt.rgba(17 / 255, 154 / 255, 99 / 255, 0.30),
+        badgeOnText: "#0f7a4f",
+        badgeOffFill: Qt.rgba(100 / 255, 116 / 255, 139 / 255, 0.10),
+        badgeOffEdge: Qt.rgba(100 / 255, 116 / 255, 139 / 255, 0.24),
+        badgeOffText: "#5b6472",
+        valueActive: "#1a1e26",
+        valueIdle: "#9aa3b2",
+        unit: "#a4abb7",
+        tierFill: Qt.rgba(15 / 255, 23 / 255, 42 / 255, 0.04),
+        tierHoverFill: Qt.rgba(15 / 255, 23 / 255, 42 / 255, 0.07),
+        tierActiveFill: Qt.rgba(15 / 255, 23 / 255, 42 / 255, 0.09),
+        tierActiveEdge: Qt.rgba(15 / 255, 23 / 255, 42 / 255, 0.15),
+        tierActiveText: "#171a21",
+        tierText: "#6b7280",
+        grid: Qt.rgba(15 / 255, 23 / 255, 42 / 255, 0.075),
+        axis: Qt.rgba(15 / 255, 23 / 255, 42 / 255, 0.16),
+        chartLabel: Qt.rgba(15 / 255, 23 / 255, 42 / 255, 0.36),
+        trackOpacity: 0.16
+    })
+
+    /*
+     * Metric accents. The hues are fixed identities, but the light variants are
+     * darkened because the bright dark-theme tints do not carry enough contrast
+     * against white, especially for the small ring labels.
+     */
+    readonly property var metricColors: darkMode ? ({
         cpu: "#4aa8ff",
         ram: "#a884ff",
         gpu: "#3ddc97",
         vram: "#ffb347"
+    }) : ({
+        cpu: "#1e6fd9",
+        ram: "#7a4fe0",
+        gpu: "#119a63",
+        vram: "#cf7a00"
     })
 
     /// 0 = CPU/RAM, 1 = GPU/VRAM.
@@ -169,9 +250,9 @@ PlasmoidItem {
              * Opaque: the applet asks for no background of its own, so this
              * card is the only surface between the content and the wallpaper.
              */
-            color: "#1c1f25"
+            color: root.surface.card
             border.width: 1
-            border.color: Qt.rgba(1, 1, 1, 0.075)
+            border.color: root.surface.cardBorder
 
             GridLayout {
                 anchors.fill: parent
@@ -197,7 +278,7 @@ PlasmoidItem {
                     }
                     Text {
                         text: "·"
-                        color: Qt.rgba(1, 1, 1, 0.35)
+                        color: root.surface.separator
                         font.pixelSize: 12
                     }
                     Text {
@@ -208,7 +289,7 @@ PlasmoidItem {
                     }
                     Text {
                         text: root.outerMetric === "cpu" ? Telemetry.cpuTemp : Telemetry.gpuTemp
-                        color: Qt.rgba(1, 1, 1, 0.55)
+                        color: root.surface.temperature
                         font.pixelSize: 9
                     }
                     Item { Layout.fillWidth: true }
@@ -218,18 +299,20 @@ PlasmoidItem {
                         implicitHeight: badgeText.implicitHeight + 4
                         radius: 5
                         color: Telemetry.dgpuVisible
-                               ? Qt.rgba(61 / 255, 220 / 255, 151 / 255, 0.12)
-                               : Qt.rgba(159 / 255, 176 / 255, 196 / 255, 0.10)
+                               ? root.surface.badgeOnFill
+                               : root.surface.badgeOffFill
                         border.width: 1
                         border.color: Telemetry.dgpuVisible
-                                      ? Qt.rgba(61 / 255, 220 / 255, 151 / 255, 0.22)
-                                      : Qt.rgba(159 / 255, 176 / 255, 196 / 255, 0.20)
+                                      ? root.surface.badgeOnEdge
+                                      : root.surface.badgeOffEdge
 
                         Text {
                             id: badgeText
                             anchors.centerIn: parent
                             text: Telemetry.dgpuVisible ? "5060" : "iGPU 780M"
-                            color: Telemetry.dgpuVisible ? "#8fd9b4" : "#9fb0c4"
+                            color: Telemetry.dgpuVisible
+                                   ? root.surface.badgeOnText
+                                   : root.surface.badgeOffText
                             font.pixelSize: 8
                             font.bold: true
                         }
@@ -250,6 +333,7 @@ PlasmoidItem {
                     innerColor: root.innerColor
                     outerLabel: root.labelOf(root.outerMetric)
                     innerLabel: root.labelOf(root.innerMetric)
+                    trackOpacity: root.surface.trackOpacity
 
                     onActivated: root.cycleGroup()
                 }
@@ -269,6 +353,9 @@ PlasmoidItem {
                     metricB: root.innerMetric
                     colorA: root.outerColor
                     colorB: root.innerColor
+                    gridColor: root.surface.grid
+                    axisColor: root.surface.axis
+                    labelColor: root.surface.chartLabel
                 }
 
                 // ── value row: the only place current occupancy appears ──
@@ -291,7 +378,8 @@ PlasmoidItem {
                              */
                             readonly property bool highlighted:
                                 modelData === root.outerMetric || modelData === root.innerMetric
-                            readonly property color entryColor: highlighted ? "#e6eaf0" : "#7d8492"
+                            readonly property color entryColor:
+                                highlighted ? root.surface.valueActive : root.surface.valueIdle
 
                             spacing: 3
                             visible: modelData === "cpu" || modelData === "ram" || root.gpuGroupUsable
@@ -318,7 +406,7 @@ PlasmoidItem {
                             }
                             Text {
                                 text: "%"
-                                color: "#69707d"
+                                color: root.surface.unit
                                 font.pixelSize: 8
                             }
                         }
@@ -340,16 +428,18 @@ PlasmoidItem {
                             implicitHeight: 18
                             radius: 5
                             color: root.timeRange === modelData
-                                   ? Qt.rgba(1, 1, 1, 0.10)
-                                   : (hover.hovered ? Qt.rgba(1, 1, 1, 0.07) : Qt.rgba(1, 1, 1, 0.035))
+                                   ? root.surface.tierActiveFill
+                                   : (hover.hovered ? root.surface.tierHoverFill
+                                                    : root.surface.tierFill)
                             border.width: 1
                             border.color: root.timeRange === modelData
-                                          ? Qt.rgba(1, 1, 1, 0.13) : "transparent"
+                                          ? root.surface.tierActiveEdge : "transparent"
 
                             Text {
                                 anchors.centerIn: parent
                                 text: modelData < 3600 ? (modelData / 60) + "m" : "1h"
-                                color: root.timeRange === modelData ? "#f2f4f7" : "#767d8b"
+                                color: root.timeRange === modelData
+                                       ? root.surface.tierActiveText : root.surface.tierText
                                 font.pixelSize: 9
                                 font.bold: true
                             }
