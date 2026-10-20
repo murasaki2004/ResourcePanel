@@ -9,9 +9,10 @@ Item {
 
     property alias cfg_timeRange: rangeBox.currentValue
     property alias cfg_startGroup: groupBox.currentIndex
+    property alias cfg_sizePreset: sizeBox.currentIndex
 
     implicitWidth: 340
-    implicitHeight: 180
+    implicitHeight: 260
 
     ColumnLayout {
         anchors.fill: parent
@@ -47,6 +48,24 @@ Item {
             id: groupBox
             Layout.fillWidth: true
             model: [i18n("CPU + RAM"), i18n("GPU + VRAM")]
+        }
+
+        QQC.Label {
+            text: i18n("Widget size (desktop)")
+            font.bold: true
+            Layout.topMargin: Kirigami.Units.smallSpacing
+        }
+
+        QQC.ComboBox {
+            id: sizeBox
+            Layout.fillWidth: true
+            model: [
+                i18n("Free resize"),
+                i18n("Small"),
+                i18n("Medium"),
+                i18n("Large")
+            ]
+            Component.onCompleted: currentIndex = Math.max(0, Math.min(3, cfg_sizePreset))
         }
 
         Item { Layout.fillHeight: true }

@@ -138,7 +138,16 @@ PlasmoidItem {
         plasmoid.backgroundHints = root.backgroundHintNone;
         timeRange = plasmoid.configuration.timeRange;
         activeGroup = (plasmoid.configuration.startGroup === 1 && gpuGroupUsable) ? 1 : 0;
+        Qt.callLater(root.applyDesktopTierSize);
     }
+
+    /*
+     * The container that owns the applet is only known once Plasma has
+     * reparented this item into it, which can happen after Component.onCompleted
+     * on startup. Re-run then so a saved geometry that predates a smaller tier
+     * is corrected without the user having to toggle the setting.
+     */
+    onParentChanged: Qt.callLater(applyDesktopTierSize)
 
     readonly property var activePair: groups[activeGroup]
     readonly property string outerMetric: activePair.outer
@@ -150,6 +159,38 @@ PlasmoidItem {
     /// discrete GPU is asleep or hidden by cardwire the readings come from the
     /// integrated GPU instead, so the pair is always populated.
     readonly property bool gpuGroupUsable: Telemetry.gpuAvailable
+
+    /*
+     * Fixed size tiers. Every factor scales the authored canvas as a whole, so
+     * each tier keeps the reference aspect exactly. Index 0 is "free resize"
+     * and has no factor of its own. The smallest tier starts at the authored
+     * size, and there is nothing above 1.5x on purpose: larger sizes are easier
+     * to reach by dragging in edit mode.
+     */
+    readonly property var sizePresets: [
+        { factor: 1.0 },
+        { factor: 1.0 },
+        { factor: 1.25 },
+        { factor: 1.5 }
+    ]
+
+    readonly property int sizePreset: {
+        const value = plasmoid.configuration.sizePreset;
+        return (typeof value === "number" && value >= 0 && value < sizePresets.length) ? value : 0;
+    }
+
+    /*
+     * Plasma::Types::FormFactor values, spelled out for the same reason as
+     * backgroundHintNone: main.qml is also loaded offscreen without the Plasma
+     * core import. Only a desktop applet can be locked in both dimensions; a
+     * panel already chooses one of them.
+     */
+    readonly property int formFactorPlanar: 0
+    readonly property int formFactorMediaCenter: 1
+    readonly property int formFactor:
+        typeof plasmoid.formFactor === "number" ? plasmoid.formFactor : formFactorPlanar
+    readonly property bool planarFormFactor:
+        formFactor === formFactorPlanar || formFactor === formFactorMediaCenter
 
     /*
      * The ring animation is owned by the representation, but the group can be
@@ -209,6 +250,52 @@ PlasmoidItem {
         timeRange = tiers[i];
     }
 
+    /*
+     * Plasma's desktop layout only ever grows an applet to fit its size hints:
+     * GridLayoutManager::adjustToItemSizeHints() ignores a preferred size that
+     * is smaller than the current one. A tier switch downwards would therefore
+     * leave the applet at the old size until the user drags a resize handle.
+     *
+     * The resize handles do not set a size hint either; they resize the plain
+     * ItemContainer that wraps the applet and ask the layout to reposition it.
+     * Do the same here, so both directions of a tier switch take effect at
+     * once. Panels are untouched (sizeLocked is false outside planar form
+     * factors) and the free-resize tier never enters this branch.
+     */
+    function applyDesktopTierSize() {
+        const item = root.fullRepresentationItem;
+        if (!item || !item.sizeLocked) {
+            return;
+        }
+
+        // Root's visual parent is the ItemContainer that owns this applet.
+        let container = root.parent;
+        while (container && container.layout === undefined) {
+            container = container.parent;
+        }
+        if (!container || !container.layout || !container.layout.positionItem) {
+            return;
+        }
+
+        // The layout stores geometry in whole cells, like Plasma does when it
+        // grows an applet to fit its hints.
+        const cellWidth = container.layout.cellWidth || 1;
+        const cellHeight = container.layout.cellHeight || 1;
+        const width = cellWidth * Math.ceil((item.lockedWidth + container.leftPadding + container.rightPadding) / cellWidth);
+        const height = cellHeight * Math.ceil((item.lockedHeight + container.topPadding + container.bottomPadding) / cellHeight);
+
+        if (Math.abs(container.width - width) < 1 && Math.abs(container.height - height) < 1) {
+            return;
+        }
+
+        container.layout.releaseSpace(container);
+        container.width = width;
+        container.height = height;
+        container.layout.positionItem(container);
+    }
+
+    onSizePresetChanged: Qt.callLater(applyDesktopTierSize)
+
     preferredRepresentation: fullRepresentation
 
     fullRepresentation: Item {
@@ -229,15 +316,34 @@ PlasmoidItem {
         readonly property real canvasScale:
             Math.min(width / canvasWidth, height / canvasHeight)
 
-        implicitWidth: canvasWidth
-        implicitHeight: canvasHeight
+        /*
+         * A chosen tier becomes a hard size on the desktop. Both dimensions
+         * are derived from the same factor, so the locked size cannot drift
+         * away from the canvas aspect. Room is made around the applet in both
+         * directions by applyDesktopTierSize(), because Plasma's layout itself
+         * only grows items to fit their hints. Panels keep their own dimension
+         * and are left free to grow along the other axis.
+         */
+        readonly property real presetFactor:
+            root.sizePreset > 0 ? root.sizePresets[root.sizePreset].factor : 1
+        readonly property bool sizeLocked: root.sizePreset > 0 && root.planarFormFactor
+        readonly property real lockedWidth: Math.round(canvasWidth * presetFactor)
+        readonly property real lockedHeight: Math.round(canvasHeight * presetFactor)
+
+        implicitWidth: sizeLocked ? lockedWidth : canvasWidth
+        implicitHeight: sizeLocked ? lockedHeight : canvasHeight
         /*
          * Floor at the size the widget is actually used at on the desktop,
          * read from the saved Plasma geometry (Applet-506, 384x176 on the
-         * 1463x914 logical screen). It cannot be shrunk below that.
+         * 1463x914 logical screen). It cannot be shrunk below that while
+         * free-resizing.
          */
-        Layout.minimumWidth: 384
-        Layout.minimumHeight: 176
+        Layout.minimumWidth: sizeLocked ? lockedWidth : 384
+        Layout.maximumWidth: sizeLocked ? lockedWidth : Number.POSITIVE_INFINITY
+        Layout.preferredWidth: sizeLocked ? lockedWidth : -1
+        Layout.minimumHeight: sizeLocked ? lockedHeight : 176
+        Layout.maximumHeight: sizeLocked ? lockedHeight : Number.POSITIVE_INFINITY
+        Layout.preferredHeight: sizeLocked ? lockedHeight : -1
 
         Rectangle {
             id: card

@@ -13,5 +13,9 @@
       <label>Group shown on startup: 0 = CPU/RAM, 1 = GPU/VRAM</label>
       <default>0</default>
     </entry>
+    <entry name="sizePreset" type="Int">
+      <label>Size preset: 0 = free resize, 1..3 = fixed aspect-preserving tiers</label>
+      <default>0</default>
+    </entry>
   </group>
 </kcfg>

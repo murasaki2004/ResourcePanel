@@ -41,6 +41,18 @@ Item {
     property real renderScale: 1
 
     /*
+     * Scale the canvases rasterise at. Clamped to 1 so a widget smaller than
+     * the authored canvas does not paint into an undersized buffer.
+     *
+     * Canvas.canvasSize only sets the logical drawing area — it does not map
+     * that area onto the item. The canvases below therefore grow their item
+     * geometry by this factor and undo it with an inverse transform, which is
+     * the only way to get a higher-resolution buffer without moving the
+     * content relative to the QML-drawn axis labels.
+     */
+    readonly property real pixelScale: Math.max(1, renderScale)
+
+    /*
      * The backend's sample counter. The series are pulled whenever it changes
      * rather than bound to it, because two consecutive empty results compare
      * equal and a binding would then never re-evaluate once data arrives.
@@ -135,16 +147,19 @@ Item {
     // ── static coordinate frame: gridlines, axis cross, range captions ──
     Canvas {
         id: grid
-        anchors.fill: parent
+        width: Math.max(1, root.width * root.pixelScale)
+        height: Math.max(1, root.height * root.pixelScale)
+        scale: 1 / root.pixelScale
+        transformOrigin: Item.TopLeft
 
-        canvasSize: Qt.size(Math.max(1, Math.round(width * root.renderScale)),
-                            Math.max(1, Math.round(height * root.renderScale)))
+        canvasSize: Qt.size(Math.max(1, Math.round(width)),
+                            Math.max(1, Math.round(height)))
         onCanvasSizeChanged: requestPaint()
 
         onPaint: {
             const ctx = getContext("2d");
             ctx.reset();
-            ctx.scale(root.renderScale, root.renderScale);
+            ctx.scale(root.pixelScale, root.pixelScale);
             if (root.plotWidth <= 0 || root.plotHeight <= 0) {
                 return;
             }
@@ -197,16 +212,19 @@ Item {
     // ── the only thing that changes: the curves ──
     Canvas {
         id: curves
-        anchors.fill: parent
+        width: Math.max(1, root.width * root.pixelScale)
+        height: Math.max(1, root.height * root.pixelScale)
+        scale: 1 / root.pixelScale
+        transformOrigin: Item.TopLeft
 
-        canvasSize: Qt.size(Math.max(1, Math.round(width * root.renderScale)),
-                            Math.max(1, Math.round(height * root.renderScale)))
+        canvasSize: Qt.size(Math.max(1, Math.round(width)),
+                            Math.max(1, Math.round(height)))
         onCanvasSizeChanged: requestPaint()
 
         onPaint: {
             const ctx = getContext("2d");
             ctx.reset();
-            ctx.scale(root.renderScale, root.renderScale);
+            ctx.scale(root.pixelScale, root.pixelScale);
             if (root.plotWidth <= 0 || root.plotHeight <= 0) {
                 return;
             }
