@@ -374,7 +374,8 @@ void Telemetry::sampleGpu()
             push(Vram, float(m_vramPercent));
         }
         if (milli > 0) {
-            m_gpuTemp = QString::number(milli / 1000) + QStringLiteral("°C");
+            // NVML reports whole degrees Celsius, unlike sysfs (millidegrees).
+            m_gpuTemp = QString::number(milli) + QStringLiteral("°C");
         }
         if (m_gpuName.isEmpty() || !m_gpuIsDiscrete) {
             resolveNvidiaGpuName();
